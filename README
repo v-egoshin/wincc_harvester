@@ -1,1 +1,4 @@
 Metasploit module receives sensitive information from the WinCC database.
+
+Copy this file to: /opt/metasploit/msf3/modules/auxiliary/admin/scada/
+Use: use auxiliary/admin/scada/wincc_harvester
