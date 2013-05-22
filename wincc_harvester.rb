@@ -43,7 +43,7 @@ class Metasploit3 < Msf::Auxiliary
 		key = "This is my encryptionkey"
 	    ascii = -> str { str .scan(/./)  .map{|c|c.ord} } # convert string to ascii array
 	    hex = -> num { num .scan(/../) .map{|n|n.to_i 16 if n.to_i>0} } # convert hex string to array
-	    key, hash = ascii.(key), hex.(hash[2..-1]) # remove 0x
+	    key, hash = ascii.(key), hex.(hash) # remove 0x
 	
 	    username = ascii.(username.upcase) + [0] * (key.size - ascii.(username).size) # complements an array of zeroes element
 	    hash.delete(32) # delete spaces from ascii key array
